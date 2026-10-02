@@ -45,9 +45,19 @@ await mongoose.connection.useDb('asset_db').createCollection('assets');
 - `asset-service` → 3001
 - `operations-service` → 3002
 
-## Next steps
+## Repo
+
+Local git repo is initialised on `main` with one commit. Push once GitHub auth is done:
+
+```bash
+gh auth login
+gh repo create smart-asset-management --private --source . --push
+```
+
+## Status
 
 - [x] Install Node.js LTS, Git, VS Code, Postman
 - [x] Create repo with folder structure
-- [x] Create MongoDB Atlas, Render, Vercel accounts
-- [x] Create `asset_db` and `operations_db`
+- [ ] Push to GitHub (`gh auth login` still needed)
+- [ ] Create MongoDB Atlas, Render, Vercel accounts
+- [ ] Create `asset_db` and `operations_db`

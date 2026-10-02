@@ -1,0 +1,70 @@
+<mxfile host="app.diagrams.net" agent="opencode" version="24.0.0" type="device">
+  <diagram name="Asset Lifecycle" id="lifecycle-main">
+    <mxGraphModel dx="1600" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Asset Lifecycle" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#1F2933;" vertex="1" parent="1">
+          <mxGeometry x="450" y="20" width="700" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="s_draft" value="draft" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#E8E8E8;strokeColor=#999999;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s_stock" value="in_stock" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#D5E8D4;strokeColor=#82B366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="200" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s_assigned" value="assigned" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="200" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s_maint" value="in_maintenance" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#FFE6CC;strokeColor=#D79B00;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="200" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s_returned" value="returned" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#F8CECC;strokeColor=#B85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="350" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s_lost" value="lost" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#F8CECC;strokeColor=#B85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="350" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s_retired" value="retired" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#E1D5E7;strokeColor=#9673A6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s_disposed" value="disposed&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;terminal&lt;/font&gt;" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#B0B0B0;strokeColor=#666666;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="200" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="t1" value="procure / add" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#666666;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="s_draft" target="s_stock">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t2" value="allocate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#6C8EBF;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="s_stock" target="s_assigned">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t3" value="raise ticket" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#D79B00;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="s_assigned" target="s_maint">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t4" value="return" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B85450;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="s_assigned" target="s_returned">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t5" value="inspect &amp; decide" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82B366;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="s_returned" target="s_stock">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t6" value="repair complete" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82B366;fontSize=10;exitX=0.5;exitY=1;entryX=1;entryY=1;" edge="1" parent="1" source="s_maint" target="s_stock">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t7" value="beyond repair" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B85450;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="s_maint" target="s_lost">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t8" value="report stolen" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B85450;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="s_lost" target="s_retired">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t9" value="end of life / write off" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9673A6;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="s_retired" target="s_disposed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t10" value="repair complete" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82B366;fontSize=10;exitX=0.5;exitY=0.5;entryX=0.5;entryY=1;" edge="1" parent="1" source="s_lost" target="s_retired">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="&lt;b&gt;How transitions happen&lt;/b&gt;&lt;br&gt;• draft → in_stock: admin adds a purchased asset&lt;br&gt;• in_stock → assigned: POST /api/allocations creates an active allocation; Asset.assignedTo and status update together&lt;br&gt;• assigned → in_maintenance: POST /api/maintenance in operations-service; asset-service marks the asset via internal sync&lt;br&gt;• assigned → returned: PATCH /api/allocations/:id/return sets returnedAt, closes the allocation, clears assignedTo&lt;br&gt;• returned → in_stock: manager accepts the returned asset, or it goes to maintenance instead&lt;br&gt;• in_maintenance → in_stock: PATCH /api/maintenance/:id/complete; cost and downtime recorded, asset restored&lt;br&gt;• in_maintenance → lost: technician reports irreparable damage&lt;br&gt;• retired → disposed: irreversible write-off, record kept for audit&lt;br&gt;&lt;br&gt;&lt;b&gt;Guardrails&lt;/b&gt;&lt;br&gt;• Only one allocation with status=active per asset (partial unique index)&lt;br&gt;• disposed is terminal — no outgoing transitions&lt;br&gt;• Every status change writes an auditTrail entry (operations) and updatedBy (assets)" style="shape=note;whiteSpace=wrap;html=1;size=20;align=left;verticalAlign=top;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=11;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="470" width="1370" height="230" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
