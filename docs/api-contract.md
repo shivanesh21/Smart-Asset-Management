@@ -82,17 +82,52 @@ Error (all failures use this shape):
 | 500 | Internal Server Error | unhandled error |
 | 502 / 504 | Bad Gateway / Timeout | upstream service failure (asset-service → operations-service) |
 
+### Error envelope
+
+Every non-2xx response from `asset-service` uses exactly this shape. There are no exceptions —
+validation failures, auth failures, 404s, and unhandled exceptions all go through the same
+central handler in `middleware/error.js`.
+
+```json
+{
+  "error": {
+    "code": "ASSET_NOT_FOUND",
+    "message": "Asset AST-9999 not found",
+    "details": [],
+    "requestId": "0f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f"
+  }
+}
+```
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `code` | string | Stable machine-readable code. Branch on this, never on `message`. |
+| `message` | string | Human-readable summary. Not guaranteed stable. |
+| `details` | array | `{ field, message }` entries for validation failures; `[]` otherwise. |
+| `requestId` | string | Correlation id, also returned in the `x-request-id` response header. |
+
+Send your own `x-request-id` request header and it is reused verbatim, so traces join up across
+services. Stack traces are never included. For `5xx` in production the `message` is replaced with
+`Internal server error` so internals never leak.
+
+`404` uses `ROUTE_NOT_FOUND` for an unmatched path and a resource-specific code such as
+`ASSET_NOT_FOUND` for a missing record.
+
 ### Role matrix (RBAC)
+
+Implemented in `asset-service` as of Day 7. `operations-service` columns are the intended design.
 
 | Capability | admin | staff | technician |
 | --- | --- | --- | --- |
-| Create/update/delete assets | Y | Y | read | read |
-| Create allocations | Y | Y | read | request own |
-| Return assets | Y | Y | Y | Y (own) |
-| Create/update maintenance | Y | Y | Y | report only |
-| Manage technicians | Y | Y | read own | none |
-| Manage users | Y | none | none | none |
-| View all reports | Y | Y | own jobs | own assets |
+| Read assets | Y | Y | Y |
+| Create/update/delete assets | Y | 403 | 403 |
+| Change asset status | Y | 403 | 403 |
+| Create allocations | Y | 403 | request own |
+| Return assets | Y | 403 | Y (own) |
+| Create/update maintenance | Y | 403 | report only |
+| Manage technicians | Y | 403 | none |
+| Manage users | Y | 403 | 403 |
+| View all reports | Y | own jobs | own assets |
 
 ---
 
@@ -219,7 +254,7 @@ Implemented as of Day 5: `POST /api/assets`, `GET /api/assets`, `GET /api/assets
 `PATCH /api/assets/:id/status`, `DELETE /api/assets/:id`.
 
 **All asset routes require a bearer token** (Day 6). Reads allow any authenticated role
-(`admin`, `staff`, `technician`); writes and deletes require `admin` or `staff`.
+(`admin`, `staff`, `technician`); writes and deletes are `admin`-only.
 
 Notes that apply to every asset route:
 
@@ -826,20 +861,27 @@ Internal endpoints are prefixed `/api/internal` and are reachable only from the 
 
 | Code | HTTP | Meaning |
 | --- | --- | --- |
-| `VALIDATION_ERROR` | 400 | body/query failed validation |
-| `INVALID_OBJECT_ID` | 400 | `:id` is not a 24-char hex string |
+| `VALIDATION_ERROR` | 400 | body/query failed validation, or a malformed `:id` |
+| `INVALID_ID` | 400 | `:id` failed an ObjectId cast |
+| `MALFORMED_JSON` | 400 | request body is not parseable JSON |
+| `INVALID_VALUE` | 400 | a field failed a cast |
+| `PAYLOAD_TOO_LARGE` | 413 | body exceeded the 1MB limit |
+| `ROUTE_NOT_FOUND` | 404 | no route matched the path |
+| `DUPLICATE_KEY` | 409 | Mongo unique index violation (fallback when no specific code applies) |
+| `AUTH_UNAVAILABLE` | 503 | could not verify the token's user (database unreachable) |
+| `INTERNAL_ERROR` | 500 | unhandled error; message masked in production |
 | `UNAUTHORIZED` | 401 | token missing, invalid, or expired |
 | `INVALID_CREDENTIALS` | 401 | login email/password mismatch |
 | `ACCOUNT_INACTIVE` | 403 | user `isActive` is false |
-| `TOO_MANY_ATTEMPTS` | 429 | login lockout or rate limit |
+| `ACCOUNT_LOCKED` | 429 | 5 consecutive failed logins; locked 15 minutes |
 | `FORBIDDEN` | 403 | role not permitted |
-| `NOT_FOUND` | 404 | generic not found |
+| `ROUTE_NOT_FOUND` | 404 | unmatched path (see above) |
 | `ASSET_NOT_FOUND` | 404 | |
 | `USER_NOT_FOUND` | 404 | |
 | `ALLOCATION_NOT_FOUND` | 404 | |
 | `TECHNICIAN_NOT_FOUND` | 404 | |
 | `MAINTENANCE_NOT_FOUND` | 404 | |
-| `ASSET_TAG_EXISTS` | 409 | duplicate `assetTag` |
+| `SERIAL_NUMBER_EXISTS` | 409 | duplicate `serialNumber` (unique sparse index) |
 | `EMAIL_ALREADY_EXISTS` | 409 | duplicate `email` |
 | `EMPLOYEE_CODE_EXISTS` | 409 | duplicate `employeeCode` |
 | `ASSET_ALREADY_ALLOCATED` | 409 | active allocation exists |

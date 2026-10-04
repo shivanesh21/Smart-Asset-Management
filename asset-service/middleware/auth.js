@@ -42,7 +42,14 @@ export async function requireAuth(req, res, next) {
     return next(new ApiError(401, 'UNAUTHORIZED', message));
   }
 
-  const user = await User.findById(claims.sub).select('email role isActive');
+  let user;
+  try {
+    user = await User.findById(claims.sub).select('email role isActive');
+  } catch (err) {
+    return next(
+      new ApiError(503, 'AUTH_UNAVAILABLE', 'Could not verify your account. Please retry.', [])
+    );
+  }
 
   if (!user) {
     return next(new ApiError(401, 'UNAUTHORIZED', 'User for this token no longer exists'));

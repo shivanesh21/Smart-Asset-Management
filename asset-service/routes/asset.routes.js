@@ -22,7 +22,7 @@ import {
 
 const router = Router();
 
-const canWrite = requireRole('admin', 'staff');
+const canWrite = requireRole('admin');
 
 router.get('/assets/summary', requireAuth, getAssetSummary);
 router.post('/assets', requireAuth, canWrite, createAssetRules, handleValidation, createAsset);

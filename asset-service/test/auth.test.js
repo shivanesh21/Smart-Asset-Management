@@ -244,7 +244,7 @@ describe('roleMiddleware', () => {
     assert.equal(created.status, 403);
   });
 
-  it('lets staff write assets', async () => {
+  it('403s staff trying to write assets', async () => {
     const staff = await createUser(app, admin.header, 'staff');
     const login = await loginAs(app, staff.email, staff.password);
 
@@ -252,8 +252,37 @@ describe('roleMiddleware', () => {
       .post('/api/assets')
       .send({ name: 'Staff Laptop', category: 'laptop' });
 
-    assert.equal(res.status, 201);
-    assert.equal(res.body.data.createdBy, login.user.id);
+    assert.equal(res.status, 403);
+    assert.equal(res.body.error.code, 'FORBIDDEN');
+    assert.match(res.body.error.message, /admin/);
+  });
+
+  it('403s staff on every asset write verb', async () => {
+    const staff = await createUser(app, admin.header, 'staff');
+    const login = await client(app, (await loginAs(app, staff.email, staff.password)).header);
+    const asset = await api
+      .post('/api/assets')
+      .send({ name: 'Admin Only Asset', category: 'laptop' })
+      .then((r) => r.body.data);
+
+    const put = await login.put(`/api/assets/${asset.id}`).send({ name: 'Nope', category: 'laptop' });
+    const patch = await login.patch(`/api/assets/${asset.id}`).send({ name: 'Nope' });
+    const status = await login.patch(`/api/assets/${asset.id}/status`).send({ status: 'in_stock' });
+    const del = await login.delete(`/api/assets/${asset.id}`);
+
+    for (const res of [put, patch, status, del]) {
+      assert.equal(res.status, 403, `${res.request.method} should be admin-only`);
+      assert.equal(res.body.error.code, 'FORBIDDEN');
+    }
+  });
+
+  it('lets staff read assets', async () => {
+    const staff = await createUser(app, admin.header, 'staff');
+    const login = await loginAs(app, staff.email, staff.password);
+
+    const res = await client(app, login.header).get('/api/assets');
+
+    assert.equal(res.status, 200);
   });
 
   it('lets a technician read assets', async () => {

@@ -14,10 +14,16 @@ Roles are `admin`, `staff`, `technician`.
 | Capability | admin | staff | technician |
 | --- | --- | --- | --- |
 | Read assets | Y | Y | Y |
-| Create/update/delete assets | Y | Y | 403 |
-| Change asset status | Y | Y | 403 |
+| Create/update/delete assets | Y | 403 | 403 |
+| Change asset status | Y | 403 | 403 |
 | List/create users | Y | 403 | 403 |
 | Read own profile | Y | Y | Y |
+
+**Day 7 decision**: asset writes are `admin`-only. `staff` and `technician` are read-only on
+assets. This tightened Day 6, where `staff` could still write; a staff member who needs to change
+an asset record must go through an admin. The rationale is that asset writes mutate the audit
+trail (`createdBy`/`updatedBy`) and can move an asset into `assigned` or `disposed`, which affects
+allocations and maintenance in `operations-service`.
 
 ## 1. User Model (Asset Service)
 

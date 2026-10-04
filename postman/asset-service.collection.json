@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Smart Asset Management - asset-service",
-    "_postman_id": "b7c1f0e2-1a2b-4c3d-9e8f-0a1b2c3d4e5f",
-    "description": "asset-service API (Days 4-5: create, read, update, delete, status, filters).\n\nRun the requests top to bottom: each one saves the variables the next one needs.\nNo environment required, collection variables are used.",
+    "name": "Smart Asset Management - Asset Service",
+    "_postman_id": "a1b2c3d4-7e8f-4a0b-9c1d-2e3f4a5b6c7d",
+    "description": "Complete asset-service API (Days 4-7).\n\n**Run the folders top to bottom.** Start with `01 Authentication` so the token variables are captured.\n\nPrerequisites: `npm run seed` in `asset-service` for the three demo accounts, and the service running on port 3001.\n\nRoles:\n- `admin` - full read and write\n- `staff` - read only\n- `technician` - read only\n\nEvery error response uses the same envelope:\n```json\n{ \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": [], \"requestId\": \"...\" } }\n```\nThe `requestId` is also returned in the `x-request-id` header and accepts an inbound `x-request-id` for tracing.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -11,7 +11,15 @@
       "value": "http://localhost:3001"
     },
     {
-      "key": "accessToken",
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "staffToken",
+      "value": ""
+    },
+    {
+      "key": "technicianToken",
       "value": ""
     },
     {
@@ -23,740 +31,1806 @@
       "value": ""
     },
     {
+      "key": "terminalAssetId",
+      "value": ""
+    },
+    {
       "key": "serialNumber",
-      "value": "SN-DEMO-0001"
+      "value": ""
     }
   ],
+  "auth": {
+    "type": "noauth"
+  },
   "item": [
     {
-      "name": "Login (get token)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin@12345\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/auth/login",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "auth",
-            "login"
-          ]
-        }
-      },
-      "event": [
+      "name": "01 Authentication",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 and token captured', function () {",
-              "    pm.response.to.have.status(200);",
-              "    pm.expect(pm.response.json().accessToken).to.be.a('string');",
-              "});",
-              "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Health",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/health",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "health"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('health returns 200 ok', function () {",
-              "    pm.response.to.have.status(200);",
-              "    pm.expect(pm.response.json().status).to.eql('ok');",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Create Asset",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Dell Latitude 5440\",\n  \"category\": \"laptop\",\n  \"department\": \"Engineering\",\n  \"serialNumber\": \"{{serialNumber}}\",\n  \"condition\": \"new\",\n  \"purchaseDate\": \"2026-01-15\",\n  \"purchaseCost\": 78000,\n  \"currency\": \"INR\",\n  \"manufacturer\": \"Dell\",\n  \"model\": \"Latitude 5440\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
-              "const body = pm.response.json();",
-              "pm.test('assetId is auto-generated as AST-####', function () {",
-              "    pm.expect(body.data.assetId).to.match(/^AST-\\d{4,}$/);",
-              "});",
-              "pm.test('status defaults to draft', function () {",
-              "    pm.expect(body.data.status).to.eql('draft');",
-              "});",
-              "pm.collectionVariables.set('assetId', body.data.assetId);",
-              "pm.collectionVariables.set('assetMongoId', body.data.id);",
-              "console.log('created', body.data.assetId);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Create Asset (duplicate serial -> 409)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Cloned Laptop\",\n  \"category\": \"laptop\",\n  \"serialNumber\": \"{{serialNumber}}\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('409 Conflict on duplicate serialNumber', function () {",
-              "    pm.response.to.have.status(409);",
-              "    pm.expect(pm.response.json().error.code).to.eql('SERIAL_NUMBER_EXISTS');",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Create Asset (invalid body -> 400)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"category\": \"spaceship\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('400 VALIDATION_ERROR with field details', function () {",
-              "    pm.response.to.have.status(400);",
-              "    const e = pm.response.json().error;",
-              "    pm.expect(e.code).to.eql('VALIDATION_ERROR');",
-              "    pm.expect(e.details.some(d => d.field === 'name')).to.be.true;",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "List Assets (filters + pagination)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets?category=laptop&department=Engineering&page=1&limit=10&sort=-createdAt",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets"
-          ],
-          "query": [
-            {
-              "key": "category",
-              "value": "laptop"
+          "name": "Login as admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin@12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            {
-              "key": "department",
-              "value": "Engineering"
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
             },
+            "description": "Run this first. Captures {{adminToken}} for every other request."
+          },
+          "event": [
             {
-              "key": "page",
-              "value": "1"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 with a bearer token', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const b = pm.response.json();",
+                  "    pm.expect(b.tokenType).to.eql('Bearer');",
+                  "    pm.expect(b.expiresIn).to.be.above(0);",
+                  "    pm.expect(b.user.role).to.eql('admin');",
+                  "    pm.expect(b.user.passwordHash).to.be.undefined;",
+                  "});",
+                  "pm.collectionVariables.set('adminToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"staff@example.com\",\n  \"password\": \"Staff@12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            {
-              "key": "limit",
-              "value": "10"
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
             },
+            "description": "Staff can READ assets but cannot write them."
+          },
+          "event": [
             {
-              "key": "sort",
-              "value": "-createdAt"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 staff', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('staffToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as technician",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"technician@example.com\",\n  \"password\": \"Tech@12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 technician', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('technicianToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register a new user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ravi Kumar\",\n  \"email\": \"ravi.kumar+{{$timestamp}}@example.com\",\n  \"password\": \"Ravi@12345\",\n  \"department\": \"IT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public endpoint. The role in the body is ignored and always becomes staff."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('role is forced to staff', function () {",
+                  "    pm.expect(pm.response.json().data.role).to.eql('staff');",
+                  "});",
+                  "pm.test('never returns a password hash', function () {",
+                  "    pm.expect(pm.response.json().data.passwordHash).to.be.undefined;",
+                  "});"
+                ]
+              }
             }
           ]
         }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 with pagination envelope', function () {",
-              "    pm.response.to.have.status(200);",
-              "    const b = pm.response.json();",
-              "    pm.expect(Array.isArray(b.data)).to.be.true;",
-              "    pm.expect(b.meta).to.have.property('totalPages');",
-              "});"
-            ]
-          }
-        }
       ]
     },
     {
-      "name": "Search Assets",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets?search=Latitude",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets"
-          ],
-          "query": [
+      "name": "02 Users (admin only)",
+      "item": [
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "Admin only. Returns a paginated envelope with no password hashes."
+          },
+          "event": [
             {
-              "key": "search",
-              "value": "Latitude"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 for admin', function () { pm.response.to.have.status(200); });",
+                  "pm.test('no password hashes leak', function () {",
+                  "    const users = pm.response.json().data;",
+                  "    users.forEach(u => pm.expect(u.passwordHash).to.be.undefined);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create a technician",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Priya Nair\",\n  \"email\": \"priya.nair+{{$timestamp}}@example.com\",\n  \"password\": \"Priya@12345\",\n  \"role\": \"technician\",\n  \"department\": \"Facilities\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('honours the requested role', function () {",
+                  "    pm.expect(pm.response.json().data.role).to.eql('technician');",
+                  "});",
+                  "pm.test('forces a password change on first login', function () {",
+                  "    pm.expect(pm.response.json().data.mustChangePassword).to.be.true;",
+                  "});"
+                ]
+              }
             }
           ]
         }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 and search matches', function () {",
-              "    pm.response.to.have.status(200);",
-              "    const b = pm.response.json();",
-              "    pm.expect(b.data.length).to.be.above(0);",
-              "});"
-            ]
-          }
-        }
       ]
     },
     {
-      "name": "Get Asset by assetId",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}"
-          ]
-        }
-      },
-      "event": [
+      "name": "03 Assets - success cases",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 by AST- tag', function () { pm.response.to.have.status(200); });",
-              "pm.test('200 by mongo id', function () {",
-              "    pm.expect(pm.collectionVariables.get('assetMongoId')).to.match(/^[0-9a-f]{24}$/);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Get Asset by mongo id",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetMongoId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetMongoId}}"
+          "name": "Create asset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dell Latitude 5440\",\n  \"category\": \"laptop\",\n  \"department\": \"Engineering\",\n  \"serialNumber\": \"SN-{{$timestamp}}\",\n  \"vendor\": \"CDW\",\n  \"purchaseDate\": \"2026-01-15\",\n  \"purchaseCost\": 78000,\n  \"location\": {\n    \"type\": \"office\",\n    \"building\": \"HQ\",\n    \"floor\": \"3\",\n    \"room\": \"3B-14\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Captures {{assetId}} (tag) and {{assetMongoId}} for later requests."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('assetId is server generated', function () {",
+                  "    pm.expect(pm.response.json().data.assetId).to.match(/^AST-\\d{4,}$/);",
+                  "});",
+                  "pm.test('defaults to draft / new', function () {",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d.status).to.eql('draft');",
+                  "    pm.expect(d.condition).to.eql('new');",
+                  "});",
+                  "pm.test('records the caller as createdBy', function () {",
+                  "    pm.expect(pm.response.json().data.createdBy).to.be.a('string');",
+                  "});",
+                  "pm.test('hides internal fields', function () {",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d._id).to.be.undefined;",
+                  "    pm.expect(d.__v).to.be.undefined;",
+                  "});",
+                  "pm.collectionVariables.set('assetId', pm.response.json().data.assetId);",
+                  "pm.collectionVariables.set('assetMongoId', pm.response.json().data.id);",
+                  "pm.collectionVariables.set('serialNumber', pm.response.json().data.serialNumber);"
+                ]
+              }
+            }
           ]
-        }
-      }
-    },
-    {
-      "name": "Get Asset (malformed id -> 400)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/not-an-id",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "not-an-id"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('400 on malformed id', function () { pm.response.to.have.status(400); });"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Update Asset (PATCH)",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"department\": \"Finance\",\n  \"notes\": \"Reassigned to Finance\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}"
-          ]
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 and only supplied fields changed', function () {",
-              "    pm.response.to.have.status(200);",
-              "    const d = pm.response.json().data;",
-              "    pm.expect(d.department).to.eql('Finance');",
-              "    pm.expect(d.name).to.eql('Dell Latitude 5440');",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Replace Asset (PUT)",
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Dell Latitude 5440 (replaced)\",\n  \"category\": \"desktop\",\n  \"serialNumber\": \"{{serialNumber}}\",\n  \"department\": \"Engineering\"\n}"
+          "name": "List assets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets?page=1&limit=10&sort=-createdAt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ],
+              "query": "page=1&limit=10&sort=-createdAt"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 with a pagination envelope', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const b = pm.response.json();",
+                  "    pm.expect(b.data).to.be.an('array');",
+                  "    pm.expect(b.meta).to.include({ page: 1, limit: 10 });",
+                  "    pm.expect(b.meta.total).to.be.a('number');",
+                  "    pm.expect(b.meta.totalPages).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}"
-          ]
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 and assetId is unchanged', function () {",
-              "    pm.response.to.have.status(200);",
-              "    const d = pm.response.json().data;",
-              "    pm.expect(d.category).to.eql('desktop');",
-              "    pm.expect(d.assetId).to.eql(pm.collectionVariables.get('assetId'));",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Status: draft -> in_stock",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"status\": \"in_stock\",\n  \"reason\": \"Received from vendor PO-4471\"\n}"
+          "name": "Filter and search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets?category=laptop&status=in_stock&search=Dell&page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ],
+              "query": "category=laptop&status=in_stock&search=Dell&page=1&limit=5"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 for a combined filter', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.response.json().data.forEach(function (a) {",
+                  "        pm.expect(a.category).to.eql('laptop');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}/status",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}",
-            "status"
-          ]
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 and status is in_stock', function () {",
-              "    pm.response.to.have.status(200);",
-              "    pm.expect(pm.response.json().data.status).to.eql('in_stock');",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Status: invalid transition -> 409",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"status\": \"disposed\"\n}"
+          "name": "Get by tag",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 for an AST- tag', function () { pm.response.to.have.status(200); });",
+                  "    pm.expect(pm.response.json().data.assetId).to.eql(pm.collectionVariables.get('assetId'));"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}/status",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}",
-            "status"
-          ]
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('409 INVALID_TRANSITION listing allowed states', function () {",
-              "    pm.response.to.have.status(409);",
-              "    const e = pm.response.json().error;",
-              "    pm.expect(e.code).to.eql('INVALID_TRANSITION');",
-              "    pm.expect(e.details[0].message).to.include('disposed');",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Status: in_stock -> assigned",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"status\": \"assigned\",\n  \"reason\": \"Allocated to Alice\"\n}"
+          "name": "Get by ObjectId",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetMongoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetMongoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 for a Mongo ObjectId', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}/status",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}",
-            "status"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Rule 2: delete allocated asset -> 409",
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}"
-          ]
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Rule 2: allocated asset cannot be deleted', function () {",
-              "    pm.response.to.have.status(409);",
-              "    pm.expect(pm.response.json().error.code).to.eql('ASSET_HAS_ACTIVE_ALLOCATION');",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Status: assigned -> returned, then delete",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"status\": \"returned\"\n}"
+          "name": "Asset summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 grouped by status, category and condition', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d).to.have.all.keys('totalAssets','byStatus','byCategory','byDepartment','totalValue','averageCost');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}/status",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}",
-            "status"
-          ]
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('assigned -> returned allowed', function () { pm.response.to.have.status(200); });"
-            ]
-          }
+          "name": "Replace asset (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dell Latitude 5440 (replaced)\",\n  \"category\": \"laptop\",\n  \"department\": \"Engineering\",\n  \"serialNumber\": \"SN-{{$timestamp}}\",\n  \"vendor\": \"CDW\",\n  \"condition\": \"good\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}"
+              ]
+            },
+            "description": "Full replace of mutable fields. assetId and status are not writable here."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('applies the replacement', function () {",
+                  "    pm.expect(pm.response.json().data.name).to.eql('Dell Latitude 5440 (replaced)');",
+                  "    pm.expect(pm.response.json().data.condition).to.eql('good');",
+                  "});",
+                  "pm.test('cannot change the tag or status', function () {",
+                  "    pm.expect(pm.response.json().data.assetId).to.eql(pm.collectionVariables.get('assetId'));",
+                  "    pm.expect(pm.response.json().data.status).to.eql('draft');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Partial update (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warrantyEnd\": \"2029-01-15\",\n  \"notes\": \"Extended warranty purchased\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK, only the sent fields change', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().data.notes).to.eql('Extended warranty purchased');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Move to in_stock",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_stock\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 and the transition is applied', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().data.status).to.eql('in_stock');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assign to a user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"assigned\",\n  \"assignedTo\": \"64f0a1234b567890a1b2c3d4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}",
+                "status"
+              ]
+            },
+            "description": "Set an assignee when moving to assigned."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().data.status).to.eql('assigned');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Return from assignment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"returned\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().data.status).to.eql('returned');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete asset",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}"
+              ]
+            },
+            "description": "Soft delete. Returns 204 with no body."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', function () { pm.response.to.have.status(204); });",
+                  "pm.test('empty body', function () { pm.expect(pm.response.text()).to.eql(''); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Delete Asset",
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}"
+      "name": "04 Assets - error cases",
+      "item": [
+        {
+          "name": "No token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Reads require authentication for every role."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 UNAUTHORIZED', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('UNAUTHORIZED');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Malformed token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer not.a.real.jwt"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 UNAUTHORIZED', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('UNAUTHORIZED');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Staff write -> 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staffToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Staff Should Not Create This\",\n  \"category\": \"laptop\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Day 7: only admin may write. Staff keeps read access."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 FORBIDDEN', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('FORBIDDEN');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Technician write -> 403",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{technicianToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 FORBIDDEN', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('FORBIDDEN');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing name -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"laptop\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 VALIDATION_ERROR', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});",
+                  "pm.test('points at the offending field', function () {",
+                  "    const fields = pm.response.json().error.details.map(d => d.field);",
+                  "    pm.expect(fields).to.include('name');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown category -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bad Category\",\n  \"category\": \"spaceship\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 VALIDATION_ERROR', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/not-a-real-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "not-a-real-id"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 VALIDATION_ERROR', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Malformed JSON -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"broken\",}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Body parsers run after requestId, so the envelope still carries a requestId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 MALFORMED_JSON', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('MALFORMED_JSON');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown tag -> 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/AST-9999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "AST-9999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 ASSET_NOT_FOUND', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('ASSET_NOT_FOUND');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown route -> 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "does-not-exist"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 ROUTE_NOT_FOUND', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('ROUTE_NOT_FOUND');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Setup: asset with a fixed serial",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate Serial Source\",\n  \"category\": \"laptop\",\n  \"serialNumber\": \"SN-FIXED-DUPLICATE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Setup for the next request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate serial -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate Serial\",\n  \"category\": \"laptop\",\n  \"serialNumber\": \"SN-FIXED-DUPLICATE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Reuses the serial created by the previous request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 SERIAL_NUMBER_EXISTS', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('SERIAL_NUMBER_EXISTS');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Setup: terminal asset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Terminal Asset\",\n  \"category\": \"laptop\",\n  \"serialNumber\": \"SN-TERMINAL-{{$randomInt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Setup for the transition test below."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set('terminalAssetId', pm.response.json().data.assetId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Setup: retire the terminal asset",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_stock\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{terminalAssetId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{terminalAssetId}}",
+                "status"
+              ]
+            },
+            "description": "draft -> in_stock is the only legal first hop for this asset."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 and now in_stock', function () { pm.response.to.have.status(200); });",
+                  "    pm.expect(pm.response.json().data.status).to.eql('in_stock');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Setup: dispose the terminal asset",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"disposed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{terminalAssetId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{terminalAssetId}}",
+                "status"
+              ]
+            },
+            "description": "disposed is terminal, so nothing can follow it."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 and now disposed', function () { pm.response.to.have.status(200); });",
+                  "    pm.expect(pm.response.json().data.status).to.eql('disposed');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Illegal transition -> 409",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"assigned\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{terminalAssetId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{terminalAssetId}}",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 INVALID_TRANSITION', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('INVALID_TRANSITION');",
+                  "});",
+                  "pm.test('error envelope has the standard shape', function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e).to.be.an('object');",
+                  "    pm.expect(Object.keys(e).sort()).to.eql(['code','details','message','requestId']);",
+                  "    pm.expect(e.code).to.be.a('string');",
+                  "    pm.expect(e.message).to.be.a('string');",
+                  "    pm.expect(e.details).to.be.an('array');",
+                  "    pm.expect(e.requestId).to.be.a('string');",
+                  "    pm.expect(e).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('x-request-id header matches the body', function () {",
+                  "    pm.expect(pm.response.headers.get('x-request-id')).to.eql(pm.response.json().error.requestId);",
+                  "});",
+                  "pm.test('lists the states that were allowed', function () {",
+                  "    pm.expect(pm.response.json().error.details[0].field).to.eql('status');",
+                  "});"
+                ]
+              }
+            }
           ]
         }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('204 No Content', function () { pm.response.to.have.status(204); });"
-            ]
-          }
-        }
-      ]
+      ],
+      "description": "Every request here asserts the standard error envelope and that `x-request-id` matches the body. The 1MB payload-limit case (`413 PAYLOAD_TOO_LARGE`) is not in this folder because it needs a >1MB body; it is covered by `test/errors.test.js`."
     },
     {
-      "name": "Get deleted asset -> 404",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/{{assetId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "{{assetId}}"
-          ]
-        }
-      },
-      "event": [
+      "name": "05 Health",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('404 after soft delete', function () {",
-              "    pm.response.to.have.status(404);",
-              "    pm.expect(pm.response.json().error.code).to.eql('ASSET_NOT_FOUND');",
-              "});"
-            ]
-          }
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 ok', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().status).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 ready once Mongo is connected', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().database).to.eql('connected');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
-    },
-    {
-      "name": "Asset summary",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/assets/summary",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "assets",
-            "summary"
-          ]
-        }
-      }
     }
-  ],
-  "header": [
-    {
-      "key": "Authorization",
-      "value": "Bearer {{accessToken}}"
-    }
-  ],
-  "description": "asset-service asset CRUD (Days 4-5). Run top to bottom.\n\nAll requests carry `Authorization: Bearer {{accessToken}}` from the collection header, so `npm run seed` is required first (admin@example.com / Admin@12345)."
+  ]
 }
