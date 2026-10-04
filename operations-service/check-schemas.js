@@ -1,9 +1,11 @@
-import { Technician } from './src/models/technician.model.js';
-import { Maintenance } from './src/models/maintenance.model.js';
+import { Technician } from './models/technician.model.js';
+import { Maintenance } from './models/maintenance.model.js';
+import { Allocation } from './models/allocation.model.js';
 
 const checks = [
   ['Technician', Technician, ['employeeCode', 'name', 'email']],
   ['Maintenance', Maintenance, ['maintenanceId', 'assetId', 'assetTag', 'title', 'type', 'reportedBy']],
+  ['Allocation', Allocation, ['asset', 'user', 'allocatedBy', 'conditionOnHandover']],
 ];
 
 let failed = false;

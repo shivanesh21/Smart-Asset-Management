@@ -12,6 +12,12 @@ export async function startTestApp() {
 
   const mod = await import('../server.js');
   await mongoose.connection.asPromise();
+
+  await Promise.all([
+    import('../models/user.model.js'),
+    import('../models/asset.model.js'),
+    import('../models/allocation.model.js'),
+  ]);
   await mongoose.syncIndexes();
 
   return { app: mod.app, server: mod.server, mongo };

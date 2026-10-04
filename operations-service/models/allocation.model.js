@@ -1,8 +1,11 @@
 import mongoose from 'mongoose';
-import { ALLOCATION_STATUSES } from '../constants/user.js';
+import { ALLOCATION_STATUSES, ALLOCATION_CONDITIONS } from '../constants/allocation.js';
 
 const { Schema, model } = mongoose;
 
+// `asset_db.Allocations` is owned by asset-service, which is the only service that writes
+// allocations. operations-service keeps a local definition so it can read allocation state
+// when working on maintenance, but must never insert or mutate an allocation here.
 const allocationSchema = new Schema(
   {
     asset: {
@@ -19,7 +22,6 @@ const allocationSchema = new Schema(
     },
     allocatedBy: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
       required: true,
     },
     status: {
@@ -33,12 +35,12 @@ const allocationSchema = new Schema(
     returnedAt: { type: Date },
     conditionOnHandover: {
       type: String,
-      enum: ['new', 'good', 'fair', 'poor', 'damaged'],
-      required: true,
+      enum: ALLOCATION_CONDITIONS,
+      required: [true, 'conditionOnHandover is required'],
     },
     conditionOnReturn: {
       type: String,
-      enum: ['new', 'good', 'fair', 'poor', 'damaged'],
+      enum: ALLOCATION_CONDITIONS,
     },
     purpose: { type: String, trim: true, maxlength: 500 },
     notes: { type: String, trim: true, maxlength: 2000 },

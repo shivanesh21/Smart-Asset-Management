@@ -1,10 +1,13 @@
 {
-  "name": "smart-asset-management",
+  "name": "assetpulse",
   "version": "1.0.0",
-  "private": true,
-  "description": "Smart asset management: asset-service, operations-service, frontend",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "asset": "npm --prefix asset-service run dev",
-    "operations": "npm --prefix operations-service run dev"
-  }
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }

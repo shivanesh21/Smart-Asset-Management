@@ -39,6 +39,7 @@ const maintenanceSchema = new Schema(
       uppercase: true,
       trim: true,
       index: true,
+      match: [/^AST-\d{4,}$/, 'assetTag must look like AST-1001'],
     },
     title: {
       type: String,
