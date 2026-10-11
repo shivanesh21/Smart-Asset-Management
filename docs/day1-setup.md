@@ -45,6 +45,24 @@ await mongoose.connection.useDb('asset_db').createCollection('assets');
 - `asset-service` → 3001
 - `operations-service` → 3002
 
+## Run the backend locally
+
+One command from the repo root starts both services plus a local in-memory MongoDB:
+
+```bash
+npm run backend
+```
+
+It seeds three users — `admin@example.com` / `Admin@12345`, `staff@example.com` / `Staff@12345`,
+`technician@example.com` / `Tech@12345` — and prints `ready / db=connected` for both services.
+
+To use the `MONGODB_URI` from each service's `.env` (e.g. your Atlas cluster) instead:
+
+```bash
+npm run backend -- --atlas
+```
+
+
 ## Repo
 
 Local git repo is initialised on `main` with one commit. Push once GitHub auth is done:

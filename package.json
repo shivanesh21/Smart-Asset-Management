@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node backend/start-all.cjs",
+    "backend": "node backend/start-all.cjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
