@@ -35,6 +35,13 @@ export async function createAsset(req, res, next) {
       createdBy: req.user?.id ?? null,
     });
 
+    res.locals.activity = {
+      action: 'asset.create',
+      resource: 'asset',
+      resourceId: asset.assetId,
+      summary: `Created asset ${asset.assetId} (${asset.name})`,
+    };
+
     res.status(201).json({ data: asset.toJSON() });
   } catch (err) {
     if (err instanceof mongoose.Error.ValidationError) {
@@ -131,6 +138,12 @@ export async function updateAsset(req, res, next) {
     asset.updatedBy = req.user?.id ?? asset.updatedBy;
 
     const saved = await asset.save();
+    res.locals.activity = {
+      action: 'asset.update',
+      resource: 'asset',
+      resourceId: saved.assetId,
+      summary: `Updated asset ${saved.assetId} (${saved.name})`,
+    };
     res.status(200).json({ data: saved.toJSON() });
   } catch (err) {
     handleWriteError(err, res, next);
@@ -160,6 +173,7 @@ export async function updateAssetStatus(req, res, next) {
       );
     }
 
+    const fromStatus = asset.status;
     asset.status = status;
     asset.updatedBy = req.user?.id ?? asset.updatedBy;
     if (reason) {
@@ -167,6 +181,12 @@ export async function updateAssetStatus(req, res, next) {
     }
 
     const saved = await asset.save();
+    res.locals.activity = {
+      action: 'asset.status_change',
+      resource: 'asset',
+      resourceId: saved.assetId,
+      summary: `Changed asset ${saved.assetId} status ${fromStatus} → ${saved.status}`,
+    };
     res.status(200).json({ data: saved.toJSON() });
   } catch (err) {
     handleWriteError(err, res, next);
@@ -196,6 +216,13 @@ export async function deleteAsset(req, res, next) {
     asset.deletedAt = new Date();
     asset.updatedBy = req.user?.id ?? asset.updatedBy;
     await asset.save();
+
+    res.locals.activity = {
+      action: 'asset.delete',
+      resource: 'asset',
+      resourceId: asset.assetId,
+      summary: `Deleted asset ${asset.assetId} (${asset.name})`,
+    };
 
     res.status(204).send();
   } catch (err) {

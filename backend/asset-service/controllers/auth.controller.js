@@ -1,5 +1,6 @@
 import { User } from '../models/user.model.js';
 import { ApiError } from '../middleware/error.js';
+import { recordActivity } from '../services/activity.service.js';
 import {
   signToken,
   tokenLifetimeSeconds,
@@ -28,6 +29,21 @@ export async function register(req, res, next) {
       employeeCode,
       jobTitle,
       site,
+    });
+
+    await recordActivity({
+      actorId: user._id,
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: 'auth.register',
+      resource: 'auth',
+      summary: `New staff account created: ${user.email}`,
+      method: 'POST',
+      path: '/api/auth/register',
+      statusCode: 201,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+      source: 'asset-service',
     });
 
     res.status(201).json({ data: user.toJSON() });
@@ -69,6 +85,21 @@ export async function login(req, res, next) {
     }
 
     await registerSuccessfulLogin(user);
+
+    await recordActivity({
+      actorId: user._id,
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: 'auth.login',
+      resource: 'auth',
+      summary: `${user.email} signed in`,
+      method: 'POST',
+      path: '/api/auth/login',
+      statusCode: 200,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+      source: 'asset-service',
+    });
 
     const accessToken = signToken(user);
 
@@ -116,6 +147,13 @@ export async function createUserAsAdmin(req, res, next) {
       site,
       mustChangePassword: true,
     });
+
+    res.locals.activity = {
+      action: 'user.create',
+      resource: 'user',
+      resourceId: String(user._id),
+      summary: `Admin created ${role} account: ${user.email}`,
+    };
 
     res.status(201).json({ data: user.toJSON() });
   } catch (err) {

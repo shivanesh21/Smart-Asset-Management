@@ -5,7 +5,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 export async function startTestApp() {
   const mongo = await MongoMemoryServer.create();
 
-  process.env.MONGO_URI = mongo.getUri('asset_db');
+  process.env.MONGODB_URI = mongo.getUri('asset_db');
   process.env.JWT_SECRET = 'test-secret-not-used-for-anything-real';
   process.env.NODE_ENV = 'test';
   process.env.PORT = '0';

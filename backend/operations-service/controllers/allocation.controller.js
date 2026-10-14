@@ -100,6 +100,13 @@ export async function createAllocation(req, res, next) {
       throw err;
     }
 
+    res.locals.activity = {
+      action: 'allocation.create',
+      resource: 'allocation',
+      resourceId: asset.assetId ?? assetId,
+      summary: `Allocated asset ${asset.assetId ?? assetId} to ${userId}`,
+    };
+
     res.status(201).json({ data: shape(allocation) });
   } catch (err) {
     next(err);
@@ -176,6 +183,13 @@ export async function returnAllocation(req, res, next) {
 
     await syncAssetStatus(allocation.asset, 'in_stock', req, 'Asset returned');
 
+    res.locals.activity = {
+      action: 'allocation.return',
+      resource: 'allocation',
+      resourceId: allocation.assetTag ?? String(allocation.asset),
+      summary: `Returned asset ${allocation.assetTag ?? allocation.asset}`,
+    };
+
     res.status(200).json({ data: shape(allocation) });
   } catch (err) {
     next(err);
@@ -207,6 +221,13 @@ export async function transferAllocation(req, res, next) {
       status: 'active',
       conditionOnHandover: allocation.conditionOnHandover ?? 'good',
     });
+
+    res.locals.activity = {
+      action: 'allocation.transfer',
+      resource: 'allocation',
+      resourceId: allocation.assetTag ?? String(allocation.asset),
+      summary: `Transferred asset ${allocation.assetTag ?? allocation.asset} to ${req.body.newUserId}`,
+    };
 
     res.status(201).json({ data: shape(created) });
   } catch (err) {

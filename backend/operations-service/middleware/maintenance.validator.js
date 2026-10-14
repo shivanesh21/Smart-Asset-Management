@@ -37,7 +37,9 @@ export const listMaintenanceRules = [
 ];
 
 export const maintenanceIdRules = [
-  param('id').custom((v) => isObjectId.test(v)).withMessage('id must be a 24-character hex ObjectId'),
+  param('id')
+    .custom((v) => isObjectId.test(v) || /^MNT-\d{4}-\d{4,}$/i.test(String(v)))
+    .withMessage('id must be a 24-character hex ObjectId or a maintenance ID like MNT-2026-0001'),
 ];
 
 export const assignTechnicianRules = [

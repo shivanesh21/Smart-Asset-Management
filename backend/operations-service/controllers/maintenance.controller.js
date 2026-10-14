@@ -11,6 +11,21 @@ function isObjectId(value) {
   return mongoose.Types.ObjectId.isValid(value) && /^[0-9a-fA-F]{24}$/.test(String(value));
 }
 
+/** Builds a Mongo filter from either a 24-hex ObjectId or a human Req ID (MNT-…). */
+function refFilter(ref) {
+  const value = String(ref).trim();
+  return isObjectId(value) ? { _id: value } : { maintenanceId: value.toUpperCase() };
+}
+
+/** Finds a work order by ObjectId or Req ID (MNT-YYYY-NNNN). */
+async function findMaintenanceByRef(ref, { populate = true } = {}) {
+  let query = Maintenance.findOne(refFilter(ref));
+  if (populate) query = query.populate(TECH_POPULATE);
+  const job = await query;
+  if (!job) throw new ApiError(404, 'MAINTENANCE_NOT_FOUND', `Maintenance ${ref} not found`);
+  return job;
+}
+
 function shape(doc) {
   const o = typeof doc.toObject === 'function' ? doc.toObject() : { ...doc };
   const id = String(o._id);
@@ -66,6 +81,13 @@ export async function createMaintenance(req, res, next) {
       scheduledFor,
     });
 
+    res.locals.activity = {
+      action: 'maintenance.create',
+      resource: 'maintenance',
+      resourceId: job.maintenanceId,
+      summary: `Created maintenance ${job.maintenanceId} for asset ${job.assetTag ?? assetId}`,
+    };
+
     res.status(201).json({ data: shape(job) });
   } catch (err) {
     next(err);
@@ -109,8 +131,7 @@ export async function listMaintenance(req, res, next) {
 
 export async function getMaintenance(req, res, next) {
   try {
-    const job = await Maintenance.findById(req.params.id).populate(TECH_POPULATE);
-    if (!job) throw new ApiError(404, 'MAINTENANCE_NOT_FOUND', `Maintenance ${req.params.id} not found`);
+    const job = await findMaintenanceByRef(req.params.id);
     res.status(200).json({ data: shape(job) });
   } catch (err) {
     next(err);
@@ -156,8 +177,7 @@ async function findTechnician(technicianId) {
 
 export async function assignTechnician(req, res, next) {
   try {
-    const job = await Maintenance.findById(req.params.id);
-    if (!job) throw new ApiError(404, 'MAINTENANCE_NOT_FOUND', `Maintenance ${req.params.id} not found`);
+    const job = await findMaintenanceByRef(req.params.id, { populate: false });
     if (job.status === 'completed' || job.status === 'cancelled') {
       throw new ApiError(409, 'MAINTENANCE_CLOSED', `Cannot assign a technician to a ${job.status} work order`);
     }
@@ -177,6 +197,14 @@ export async function assignTechnician(req, res, next) {
 
     await job.save();
     await job.populate(TECH_POPULATE);
+
+    res.locals.activity = {
+      action: 'maintenance.assign',
+      resource: 'maintenance',
+      resourceId: job.maintenanceId,
+      summary: `Assigned ${tech.email} to maintenance ${job.maintenanceId}`,
+    };
+
     res.status(200).json({ data: shape(job) });
   } catch (err) {
     next(err);
@@ -185,8 +213,7 @@ export async function assignTechnician(req, res, next) {
 
 export async function updateMaintenanceStatus(req, res, next) {
   try {
-    const job = await Maintenance.findById(req.params.id);
-    if (!job) throw new ApiError(404, 'MAINTENANCE_NOT_FOUND', `Maintenance ${req.params.id} not found`);
+    const job = await findMaintenanceByRef(req.params.id, { populate: false });
 
     const { status, notes } = req.body;
     const fromStatus = job.status;
@@ -222,6 +249,14 @@ export async function updateMaintenanceStatus(req, res, next) {
     }
 
     await job.populate(TECH_POPULATE);
+
+    res.locals.activity = {
+      action: 'maintenance.status_change',
+      resource: 'maintenance',
+      resourceId: job.maintenanceId,
+      summary: `Maintenance ${job.maintenanceId} status ${fromStatus} → ${job.status}`,
+    };
+
     res.status(200).json({ data: shape(job) });
   } catch (err) {
     next(err);

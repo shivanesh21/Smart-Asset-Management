@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import ThemeToggle from './ThemeToggle.jsx';
 
 /* ── Nav items with optional role restriction ── */
 const NAV_ITEMS = [
@@ -47,6 +48,17 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    to: '/staff',
+    label: 'Staff',
+    roles: ['admin'],
+    icon: (
+      <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
 ];
 
 const ROLE_BADGE = {
@@ -90,7 +102,7 @@ function LogoutModal({ onConfirm, onCancel }) {
           <button
             id="logout-confirm"
             onClick={onConfirm}
-            className="flex-1 justify-center inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-red-500/90 hover:bg-red-500 rounded-xl transition-colors"
+            className="flex-1 justify-center inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-on-color bg-red-500/90 hover:bg-red-500 rounded-xl transition-colors"
           >
             Sign out
           </button>
@@ -128,7 +140,7 @@ export default function AppLayout() {
         <div className="flex items-center gap-3 px-5 py-[18px] border-b border-[--color-border]">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600
             flex items-center justify-center shrink-0 shadow shadow-indigo-500/30">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4 text-on-color" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
             </svg>
           </div>
@@ -179,7 +191,7 @@ export default function AppLayout() {
         {/* User footer */}
         <div className="p-3 flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600
-            flex items-center justify-center text-xs font-bold text-white shrink-0">
+            flex items-center justify-center text-xs font-bold text-on-color shrink-0">
             {user?.email?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
@@ -220,11 +232,14 @@ export default function AppLayout() {
 
           <div className="flex-1" />
 
+          {/* Theme toggle */}
+          <ThemeToggle />
+
           {/* Current user chip */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[--color-border]"
             style={{ background: 'var(--color-surface)' }}>
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600
-              flex items-center justify-center text-[10px] font-bold text-white">
+              flex items-center justify-center text-[10px] font-bold text-on-color">
               {user?.email?.[0]?.toUpperCase() ?? 'U'}
             </div>
             <span className="text-xs text-slate-300 font-medium">{user?.email}</span>

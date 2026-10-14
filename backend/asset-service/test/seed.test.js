@@ -16,7 +16,7 @@ const runSeed = () =>
     cwd: process.cwd(),
     env: {
       ...process.env,
-      MONGO_URI: uri,
+      MONGODB_URI: uri,
       JWT_SECRET: 'seed-test-secret',
       NODE_ENV: 'test',
     },

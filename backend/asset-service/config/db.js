@@ -42,6 +42,8 @@ export function dbState() {
   return states[mongoose.connection.readyState] ?? 'unknown';
 }
 
-mongoose.connection.on('disconnected', () => console.warn('[db] disconnected'));
-mongoose.connection.on('reconnected', () => console.info('[db] reconnected'));
+// Lifecycle notices go to stdout (console.log), not stderr: PowerShell renders any
+// native-command stderr as a red NativeCommandError, which looks like a crash.
+mongoose.connection.on('disconnected', () => console.log('[db] disconnected'));
+mongoose.connection.on('reconnected', () => console.log('[db] reconnected'));
 mongoose.connection.on('error', (err) => console.error('[db] error:', err.message));

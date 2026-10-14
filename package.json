@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node backend/start-all.cjs",
     "backend": "node backend/start-all.cjs",
+    "backend:local": "node backend/start-all.cjs --local",
+    "backend:memory": "node backend/start-all.cjs --memory",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
