@@ -230,9 +230,19 @@ async function preflightPorts() {
 }
 
 function start(service, uri) {
+  const serviceEnv = {
+    ...process.env,
+    PORT: String(service.port),
+    ...(uri ? { MONGODB_URI: uri } : {}),
+  };
+
+  if (service.name === 'operations-service') {
+    serviceEnv.ASSET_SERVICE_URL = process.env.ASSET_SERVICE_URL || 'http://localhost:3001';
+  }
+
   const child = spawn(process.execPath, ['server.js'], {
     cwd: service.dir,
-    env: { ...process.env, ...(uri ? { MONGODB_URI: uri } : {}) },
+    env: serviceEnv,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 

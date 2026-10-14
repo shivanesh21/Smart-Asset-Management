@@ -15,7 +15,7 @@ function required(key) {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   serviceName: 'operations-service',
-  port: Number(process.env.PORT ?? 5001),
+  port: Number(process.env.PORT ?? 3002),
   mongoUri: required('MONGODB_URI'),
   assetServiceUrl: required('ASSET_SERVICE_URL'),
   jwtSecret: required('JWT_SECRET'),
