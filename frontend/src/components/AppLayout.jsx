@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 
@@ -115,10 +115,17 @@ function LogoutModal({ onConfirm, onCancel }) {
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const breadcrumbs = useBreadcrumb();
   const [showLogout, setShowLogout] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const roleBadge = ROLE_BADGE[user?.role] ?? { cls: 'badge-gray', label: user?.role ?? '' };
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   // Filter nav items by role
   const visibleNav = NAV_ITEMS.filter(
@@ -131,9 +138,21 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* ── Sidebar ── */}
-      <aside className="w-60 shrink-0 flex flex-col border-r border-[--color-border]"
+    <div className="flex h-dvh overflow-hidden">
+      {/* Mobile drawer backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ── Sidebar (drawer on mobile, static on desktop) ── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-64 shrink-0 flex flex-col border-r border-[--color-border]
+          transform transition-transform duration-200 ease-out
+          lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: 'var(--color-surface-2)' }}>
 
         {/* Brand */}
@@ -148,6 +167,16 @@ export default function AppLayout() {
             <p className="text-sm font-bold text-white leading-tight">SAM</p>
             <p className="text-[10px] text-slate-500 leading-tight">Asset Management</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors lg:hidden"
+            aria-label="Close menu"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* Role pill */}
@@ -162,6 +191,7 @@ export default function AppLayout() {
               key={to}
               to={to}
               end={to === '/'}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                   isActive
@@ -216,18 +246,36 @@ export default function AppLayout() {
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/* Top bar */}
-        <header className="h-14 shrink-0 flex items-center gap-2 px-6 border-b border-[--color-border]"
+        <header className="h-14 shrink-0 flex items-center gap-2 px-4 sm:px-6 border-b border-[--color-border]"
           style={{ background: 'var(--color-surface-2)' }}>
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
-            {breadcrumbs.map((crumb, i) => (
-              <span key={crumb.to} className="flex items-center gap-1.5">
-                {i > 0 && <span className="text-slate-600">/</span>}
-                <span className={i === breadcrumbs.length - 1 ? 'text-white font-medium' : 'text-slate-500'}>
-                  {crumb.label}
+          {/* Mobile menu button */}
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden inline-flex items-center justify-center w-9 h-9 -ml-1 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+            aria-label="Open menu"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          {/* Breadcrumbs — only the current page on very small screens */}
+          <nav className="flex items-center gap-1.5 text-sm min-w-0 overflow-hidden" aria-label="Breadcrumb">
+            {breadcrumbs.map((crumb, i) => {
+              const isLast = i === breadcrumbs.length - 1;
+              return (
+                <span
+                  key={crumb.to}
+                  className={`items-center gap-1.5 min-w-0 ${isLast ? 'flex' : 'hidden sm:flex'}`}
+                >
+                  {i > 0 && <span className="text-slate-600">/</span>}
+                  <span className={`truncate ${isLast ? 'text-white font-medium' : 'text-slate-500'}`}>
+                    {crumb.label}
+                  </span>
                 </span>
-              </span>
-            ))}
+              );
+            })}
           </nav>
 
           <div className="flex-1" />
@@ -236,14 +284,14 @@ export default function AppLayout() {
           <ThemeToggle />
 
           {/* Current user chip */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[--color-border]"
+          <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-xl border border-[--color-border]"
             style={{ background: 'var(--color-surface)' }}>
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600
-              flex items-center justify-center text-[10px] font-bold text-on-color">
+              flex items-center justify-center text-[10px] font-bold text-on-color shrink-0">
               {user?.email?.[0]?.toUpperCase() ?? 'U'}
             </div>
-            <span className="text-xs text-slate-300 font-medium">{user?.email}</span>
-            <span className={`badge ${roleBadge.cls} text-[9px] py-0`}>{roleBadge.label}</span>
+            <span className="hidden sm:inline text-xs text-slate-300 font-medium max-w-[160px] truncate">{user?.email}</span>
+            <span className={`hidden sm:inline-flex badge ${roleBadge.cls} text-[9px] py-0`}>{roleBadge.label}</span>
           </div>
         </header>
 

@@ -28,21 +28,21 @@ export default function AssetDetailsPage() {
   const maintenance = maintObj?.data || maintObj || [];
 
   if (assetLoading) {
-    return <div className="p-8 text-slate-400">Loading asset details...</div>;
+    return <div className="p-4 sm:p-6 lg:p-8 text-slate-400">Loading asset details...</div>;
   }
 
   if (assetError) {
-    return <div className="p-8 text-red-400">Error loading asset: {assetError.message}</div>;
+    return <div className="p-4 sm:p-6 lg:p-8 text-red-400">Error loading asset: {assetError.message}</div>;
   }
 
   if (!asset) {
-    return <div className="p-8 text-slate-400">Asset not found.</div>;
+    return <div className="p-4 sm:p-6 lg:p-8 text-slate-400">Asset not found.</div>;
   }
 
   return (
-    <div className="page-enter p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+    <div className="page-enter p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-white flex items-center gap-3 flex-wrap">
           {asset.name}
           <span className="badge badge-gray font-mono text-sm">{asset.assetId}</span>
         </h1>
@@ -87,7 +87,7 @@ export default function AssetDetailsPage() {
           </div>
         </div>
 
-        <div className="col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-6">
           {/* Allocation History */}
           <div className="card p-5 space-y-4">
             <h2 className="text-lg font-semibold text-white border-b border-[--color-border] pb-2">Allocation History</h2>

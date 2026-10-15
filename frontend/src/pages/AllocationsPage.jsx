@@ -205,8 +205,8 @@ export default function AllocationsPage() {
   };
 
   return (
-    <div className="page-enter p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="page-enter p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h1 className="text-2xl font-bold text-white">Allocations</h1>
         {(isAdmin || isStaff) && (
           <button className="btn-primary" onClick={() => setModalType('assign')}>
@@ -233,34 +233,34 @@ export default function AllocationsPage() {
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-[--color-surface-3] text-slate-300">
             <tr>
-              <th className="px-6 py-3 font-medium">Asset ID/Tag</th>
-              <th className="px-6 py-3 font-medium">User</th>
-              <th className="px-6 py-3 font-medium">Department</th>
-              <th className="px-6 py-3 font-medium">Status</th>
-              <th className="px-6 py-3 font-medium">Allocated At</th>
-              <th className="px-6 py-3 font-medium text-right">Actions</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">Asset ID/Tag</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">User</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">Department</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">Status</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">Allocated At</th>
+              <th className="px-4 sm:px-6 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[--color-border]">
-            {loading && <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">Loading allocations...</td></tr>}
-            {error && <tr><td colSpan="6" className="px-6 py-8 text-center text-red-400">Failed to load allocations.</td></tr>}
+            {loading && <tr><td colSpan="6" className="px-4 sm:px-6 py-8 text-center text-slate-500">Loading allocations...</td></tr>}
+            {error && <tr><td colSpan="6" className="px-4 sm:px-6 py-8 text-center text-red-400">Failed to load allocations.</td></tr>}
             {!loading && !error && allocations.length === 0 && (
-              <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">No allocations found.</td></tr>
+              <tr><td colSpan="6" className="px-4 sm:px-6 py-8 text-center text-slate-500">No allocations found.</td></tr>
             )}
             {!loading && allocations.map(alloc => (
               <tr key={alloc.id} className="hover:bg-white/5 transition-colors">
-                <td className="px-6 py-4 font-mono text-indigo-400">{alloc.asset?.assetTag || alloc.assetId}</td>
-                <td className="px-6 py-4 text-white font-medium">{alloc.user?.email || alloc.userId}</td>
-                <td className="px-6 py-4 text-slate-300">{alloc.department || '-'}</td>
-                <td className="px-6 py-4">
+                <td className="px-4 sm:px-6 py-4 font-mono text-indigo-400">{alloc.asset?.assetTag || alloc.assetId}</td>
+                <td className="px-4 sm:px-6 py-4 text-white font-medium">{alloc.user?.email || alloc.userId}</td>
+                <td className="px-4 sm:px-6 py-4 text-slate-300">{alloc.department || '-'}</td>
+                <td className="px-4 sm:px-6 py-4">
                   <span className={`badge ${alloc.status === 'active' ? 'badge-blue' : 'badge-gray'}`}>
                     {alloc.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-slate-300">
+                <td className="px-4 sm:px-6 py-4 text-slate-300">
                   {new Date(alloc.allocatedAt).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 text-right space-x-3">
+                <td className="px-4 sm:px-6 py-4 text-right space-x-3">
                   {alloc.status === 'active' && (isAdmin || isStaff) && (
                     <>
                       <button 

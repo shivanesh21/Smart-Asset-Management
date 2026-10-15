@@ -5,7 +5,7 @@ export default function MaintenanceDetailsPage() {
   const { id } = useParams();
 
   return (
-    <div className="page-enter p-8 space-y-6">
+    <div className="page-enter p-4 sm:p-6 lg:p-8 space-y-6">
       <Link to="/maintenance" className="btn-ghost py-1.5 px-3 text-xs w-fit">← Back to Maintenance</Link>
       <MaintenanceWorkOrder id={id} />
     </div>

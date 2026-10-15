@@ -74,7 +74,7 @@ export default function DashboardPage() {
 
   if (assetError) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl">
           Failed to load dashboard statistics.
         </div>
@@ -83,11 +83,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="page-enter p-8 space-y-6">
-      <h1 className="text-2xl font-bold text-white mb-6">Dashboard Overview</h1>
+    <div className="page-enter p-4 sm:p-6 lg:p-8 space-y-6">
+      <h1 className="text-2xl font-bold text-white">Dashboard Overview</h1>
 
       {/* ── KPI Cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {[
           { label: 'Total Assets', value: totalAssets, color: 'text-white' },
           { label: 'Available', value: available, color: 'text-green-400' },
@@ -95,12 +95,12 @@ export default function DashboardPage() {
           { label: 'In Maintenance', value: maintenance, color: 'text-yellow-400' },
           { label: 'Retired', value: retired, color: 'text-slate-400' },
         ].map(kpi => (
-          <div key={kpi.label} className="card p-5 flex flex-col justify-center items-center text-center space-y-1">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{kpi.label}</p>
+          <div key={kpi.label} className="card p-4 sm:p-5 flex flex-col justify-center items-center text-center space-y-1">
+            <p className="text-[11px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">{kpi.label}</p>
             {assetLoading ? (
               <div className="h-8 w-16 bg-slate-700/50 rounded animate-pulse mt-1" />
             ) : (
-              <p className={`text-3xl font-bold ${kpi.color}`}>{kpi.value}</p>
+              <p className={`text-2xl sm:text-3xl font-bold ${kpi.color}`}>{kpi.value}</p>
             )}
           </div>
         ))}

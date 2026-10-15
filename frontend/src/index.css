@@ -27,6 +27,8 @@
 /* ── Base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -37,6 +39,14 @@ body {
   background-color: var(--color-surface);
   color: #e2e8f0;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* never allow page-level horizontal scroll on mobile */
+}
+
+/* ── Mobile tweaks ────────────────────────────────────────────────────────
+   iOS Safari zooms in when a focused field's font-size is below 16px.
+   Bump form controls to 16px on small screens to keep the layout stable.   */
+@media (max-width: 640px) {
+  .input, input, select, textarea { font-size: 16px; }
 }
 
 /* ── Scrollbar ── */

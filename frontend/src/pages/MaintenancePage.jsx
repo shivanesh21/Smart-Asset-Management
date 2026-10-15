@@ -149,8 +149,8 @@ export default function MaintenancePage() {
   }
 
   return (
-    <div className="page-enter p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="page-enter p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h1 className="text-2xl font-bold text-white">Maintenance</h1>
         {(isAdmin || isStaff) && (
           <button className="btn-primary" onClick={() => setShowReport(true)}>
@@ -178,9 +178,9 @@ export default function MaintenancePage() {
           </p>
 
           {/* Filters */}
-          <div className="card p-4 flex gap-4">
+          <div className="card p-4 flex flex-col sm:flex-row gap-4">
             <select
-              className="input w-full md:w-48"
+              className="input w-full sm:w-48"
               value={params.status}
               onChange={(e) => setParams({ ...params, status: e.target.value, page: 1 })}
             >
@@ -188,7 +188,7 @@ export default function MaintenancePage() {
               {STATUSES.map(s => <option key={s} value={s}>{label(s).toUpperCase()}</option>)}
             </select>
             <select
-              className="input w-full md:w-48"
+              className="input w-full sm:w-48"
               value={params.priority}
               onChange={(e) => setParams({ ...params, priority: e.target.value, page: 1 })}
             >
@@ -202,23 +202,23 @@ export default function MaintenancePage() {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-[--color-surface-3] text-slate-300">
                 <tr>
-                  <th className="px-6 py-3 font-medium">Req ID</th>
-                  <th className="px-6 py-3 font-medium">Asset</th>
-                  <th className="px-6 py-3 font-medium">Issue</th>
-                  <th className="px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3 font-medium">Priority</th>
-                  <th className="px-6 py-3 font-medium">Technician</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium">Req ID</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium">Asset</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium">Issue</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium">Status</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium">Priority</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium">Technician</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[--color-border]">
-                {loading && <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">Loading maintenance records...</td></tr>}
-                {error && <tr><td colSpan="6" className="px-6 py-8 text-center text-red-400">Failed to load maintenance records.</td></tr>}
+                {loading && <tr><td colSpan="6" className="px-4 sm:px-6 py-8 text-center text-slate-500">Loading maintenance records...</td></tr>}
+                {error && <tr><td colSpan="6" className="px-4 sm:px-6 py-8 text-center text-red-400">Failed to load maintenance records.</td></tr>}
                 {!loading && !error && maintenanceList.length === 0 && (
-                  <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">No maintenance records found.</td></tr>
+                  <tr><td colSpan="6" className="px-4 sm:px-6 py-8 text-center text-slate-500">No maintenance records found.</td></tr>
                 )}
                 {!loading && maintenanceList.map(req => (
                   <tr key={req.id} className="hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4 font-mono text-xs">
+                    <td className="px-4 sm:px-6 py-4 font-mono text-xs">
                       <Link
                         to={`/maintenance/${req.maintenanceId || req.id}`}
                         className="text-indigo-400 hover:text-indigo-300 font-medium"
@@ -227,19 +227,19 @@ export default function MaintenancePage() {
                         {req.maintenanceId || req.id.substring(0, 8)}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 font-mono text-indigo-400">{req.asset?.assetTag || req.assetId}</td>
-                    <td className="px-6 py-4 text-white font-medium truncate max-w-[200px]" title={req.title}>{req.title}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4 font-mono text-indigo-400">{req.asset?.assetTag || req.assetId}</td>
+                    <td className="px-4 sm:px-6 py-4 text-white font-medium truncate max-w-[200px]" title={req.title}>{req.title}</td>
+                    <td className="px-4 sm:px-6 py-4">
                       <span className={`badge ${STATUS_BADGE[req.status] || 'badge-gray'}`}>
                         {label(req.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
                       <span className={`badge ${PRIORITY_BADGE[req.priority] || 'badge-gray'}`}>
                         {req.priority}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-300">{req.technician?.email || req.technicianId || '-'}</td>
+                    <td className="px-4 sm:px-6 py-4 text-slate-300">{req.technician?.email || req.technicianId || '-'}</td>
                   </tr>
                 ))}
               </tbody>

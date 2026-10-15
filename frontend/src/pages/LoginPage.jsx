@@ -133,7 +133,7 @@ export default function LoginPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-md px-4">
-        <div className="card p-8 space-y-6"
+        <div className="card p-6 sm:p-8 space-y-6"
           style={{ backdropFilter: 'blur(20px)', background: 'var(--color-surface-glass)' }}>
 
           {/* Brand */}
@@ -300,7 +300,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="reg-password" className="label">Password *</label>
                   <input
@@ -332,7 +332,7 @@ export default function LoginPage() {
                 At least 8 characters with an uppercase letter, a lowercase letter and a number.
               </p>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="reg-department" className="label">Department</label>
                   <input

@@ -61,7 +61,7 @@ function AssetForm({ asset, onSubmit, onCancel, loading, error }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="label">Name *</label>
           <input className="input" name="name" value={formData.name} onChange={handleChange} required />
@@ -173,8 +173,8 @@ export default function AssetsPage() {
   };
 
   return (
-    <div className="page-enter p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="page-enter p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h1 className="text-2xl font-bold text-white">Assets</h1>
         {isAdmin && (
           <button className="btn-primary" onClick={() => setFormModal({ show: true, asset: null })}>
@@ -207,32 +207,32 @@ export default function AssetsPage() {
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-[--color-surface-3] text-slate-300">
             <tr>
-              <th className="px-6 py-3 font-medium">Tag</th>
-              <th className="px-6 py-3 font-medium">Name</th>
-              <th className="px-6 py-3 font-medium">Category</th>
-              <th className="px-6 py-3 font-medium">Status</th>
-              <th className="px-6 py-3 font-medium text-right">Actions</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">Tag</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">Name</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">Category</th>
+              <th className="px-4 sm:px-6 py-3 font-medium">Status</th>
+              <th className="px-4 sm:px-6 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[--color-border]">
-            {loading && <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">Loading assets...</td></tr>}
-            {error && <tr><td colSpan="5" className="px-6 py-8 text-center text-red-400">Error loading assets.</td></tr>}
+            {loading && <tr><td colSpan="5" className="px-4 sm:px-6 py-8 text-center text-slate-500">Loading assets...</td></tr>}
+            {error && <tr><td colSpan="5" className="px-4 sm:px-6 py-8 text-center text-red-400">Error loading assets.</td></tr>}
             {!loading && !error && data?.data?.length === 0 && (
-              <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No assets found.</td></tr>
+              <tr><td colSpan="5" className="px-4 sm:px-6 py-8 text-center text-slate-500">No assets found.</td></tr>
             )}
             {!loading && data?.data?.map(asset => (
               <tr key={asset.id} className="hover:bg-white/5 transition-colors">
-                <td className="px-6 py-4 font-mono text-indigo-400 hover:text-indigo-300">
+                <td className="px-4 sm:px-6 py-4 font-mono text-indigo-400 hover:text-indigo-300">
                   <Link to={`/assets/${asset.id}`}>{asset.assetId}</Link>
                 </td>
-                <td className="px-6 py-4 text-white font-medium">{asset.name}</td>
-                <td className="px-6 py-4 capitalize">{asset.category}</td>
-                <td className="px-6 py-4">
+                <td className="px-4 sm:px-6 py-4 text-white font-medium">{asset.name}</td>
+                <td className="px-4 sm:px-6 py-4 capitalize">{asset.category}</td>
+                <td className="px-4 sm:px-6 py-4">
                   <span className={`badge ${asset.status === 'in_stock' ? 'badge-green' : asset.status === 'assigned' ? 'badge-blue' : asset.status === 'in_maintenance' ? 'badge-orange' : 'badge-gray'}`}>
                     {asset.status.replace('_', ' ')}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right space-x-3">
+                <td className="px-4 sm:px-6 py-4 text-right space-x-3">
                   {isAdmin && (
                     <>
                       <button 
